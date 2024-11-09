@@ -1,0 +1,245 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ShoppingCart, Camera, Home, User } from 'lucide-react';
+
+// Sample product data
+const products = [
+  {
+    id: 1,
+    name: "Diamond Ring",
+    price: 999.99,
+    image: "/api/placeholder/300/300",
+    category: "rings",
+    description: "18K White Gold Diamond Ring",
+    arEnabled: true
+  },
+  {
+    id: 2,
+    name: "Gold Necklace",
+    price: 599.99,
+    image: "/api/placeholder/300/300",
+    category: "necklaces",
+    description: "24K Gold Chain Necklace",
+    arEnabled: true
+  },
+  {
+    id: 3,
+    name: "Summer Dress",
+    price: 79.99,
+    image: "/api/placeholder/300/300",
+    category: "clothing",
+    description: "Floral Print Summer Dress",
+    arEnabled: true
+  }
+];
+
+const App = () => {
+  const [activeView, setActiveView] = useState('products');
+  const [cart, setCart] = useState([]);
+  const [arMode, setArMode] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
+  const addToCart = (product) => {
+    setCart([...cart, { ...product, quantity: 1 }]);
+  };
+
+  const removeFromCart = (productId) => {
+    setCart(cart.filter(item => item.id !== productId));
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {arMode ? (
+        <ARView 
+          product={selectedProduct} 
+          onClose={() => setArMode(false)} 
+        />
+      ) : (
+        <>
+          <Header cartCount={cart.length} />
+          <main className="container mx-auto px-4 py-8">
+            {activeView === 'products' && (
+              <ProductGrid 
+                products={products}
+                onAddToCart={addToCart}
+                onTryOn={(product) => {
+                  setSelectedProduct(product);
+                  setArMode(true);
+                }}
+              />
+            )}
+            {activeView === 'cart' && (
+              <CartView 
+                items={cart} 
+                onRemove={removeFromCart} 
+              />
+            )}
+          </main>
+          <Navigation 
+            activeView={activeView} 
+            setActiveView={setActiveView}
+            cartCount={cart.length}
+          />
+        </>
+      )}
+    </div>
+  );
+};
+
+const Header = () => (
+  <div className="bg-white shadow-sm">
+    <div className="container mx-auto px-4 py-4">
+      <h1 className="text-2xl font-bold text-center">AR Fashion Store</h1>
+    </div>
+  </div>
+);
+
+const ProductGrid = ({ products, onAddToCart, onTryOn }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {products.map(product => (
+      <Card key={product.id} className="overflow-hidden">
+        <div className="relative">
+          <img 
+            src={product.image} 
+            alt={product.name}
+            className="w-full h-48 object-cover"
+          />
+          {product.arEnabled && (
+            <button
+              onClick={() => onTryOn(product)}
+              className="absolute top-2 right-2 bg-purple-500 text-white p-2 rounded-full hover:bg-purple-600"
+            >
+              <Camera className="h-5 w-5" />
+            </button>
+          )}
+        </div>
+        <CardContent className="p-4">
+          <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
+          <p className="text-gray-600 mb-2">{product.description}</p>
+          <div className="flex justify-between items-center">
+            <span className="text-xl font-bold">${product.price}</span>
+            <button
+              onClick={() => onAddToCart(product)}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Add to Cart
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    ))}
+  </div>
+);
+
+const CartView = ({ items, onRemove }) => {
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <Card>
+        <CardHeader>
+          <CardTitle>Shopping Cart ({items.length} items)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {items.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">Your cart is empty</p>
+          ) : (
+            <>
+              {items.map(item => (
+                <div key={item.id} className="flex items-center py-4 border-b">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-20 h-20 object-cover rounded"
+                  />
+                  <div className="ml-4 flex-grow">
+                    <h3 className="font-semibold">{item.name}</h3>
+                    <p className="text-gray-600">${item.price}</p>
+                  </div>
+                  <button
+                    onClick={() => onRemove(item.id)}
+                    className="text-red-500 hover:text-red-600 px-4"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <div className="mt-6">
+                <div className="flex justify-between text-xl font-bold mb-4">
+                  <span>Total:</span>
+                  <span>${total.toFixed(2)}</span>
+                </div>
+                <button className="w-full bg-green-500 text-white py-3 rounded-lg hover:bg-green-600">
+                  Proceed to Checkout
+                </button>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+const Navigation = ({ activeView, setActiveView, cartCount }) => (
+  <div className="fixed bottom-0 left-0 right-0 bg-white border-t">
+    <div className="container mx-auto px-4">
+      <div className="flex justify-around py-4">
+        <button
+          onClick={() => setActiveView('products')}
+          className={`flex flex-col items-center ${
+            activeView === 'products' ? 'text-blue-500' : 'text-gray-500'
+          }`}
+        >
+          <Home className="h-6 w-6" />
+          <span className="text-sm">Home</span>
+        </button>
+        <button
+          onClick={() => setActiveView('cart')}
+          className={`flex flex-col items-center relative ${
+            activeView === 'cart' ? 'text-blue-500' : 'text-gray-500'
+          }`}
+        >
+          <ShoppingCart className="h-6 w-6" />
+          <span className="text-sm">Cart</span>
+          {cartCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+              {cartCount}
+            </span>
+          )}
+        </button>
+        <button
+          className="flex flex-col items-center text-gray-500"
+        >
+          <User className="h-6 w-6" />
+          <span className="text-sm">Profile</span>
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+const ARView = ({ product, onClose }) => (
+  <div className="fixed inset-0 bg-black">
+    <div className="relative w-full h-full">
+      {/* AR view placeholder */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="text-white text-center">
+          <h2 className="text-2xl font-bold mb-4">AR View</h2>
+          <p className="mb-4">Trying on: {product.name}</p>
+          <p className="text-gray-400 mb-8">
+            Point your camera at your face/body to try on this item
+          </p>
+        </div>
+      </div>
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 bg-white text-black px-4 py-2 rounded-lg"
+      >
+        Exit AR Mode
+      </button>
+    </div>
+  </div>
+);
+
+export default App;
